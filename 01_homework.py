@@ -8,10 +8,19 @@ class AddressBook(UserDict):
         self.contacts = {}
         self.notebook = Notebook()
 
-    def add_contact(self, name):
-        self.contacts[name] = Contact(name)
+    def add_contact(self, name, phone=None, address=None, email=None, birthday=None):
+        contact = Contact(name)
+        if phone:
+            contact.add_phone(phone)
+        if address:
+            contact.add_address(address)
+        if email:
+            contact.add_email(email)
+        if birthday:
+            contact.add_birthday(birthday)
+        self.contacts[name] = contact
 
-class Contact():
+class Contact:
     def __init__(self, name, phone=None, address=None, email=None, birthday=None):
         self.name = Name(name)
         self.phone = Phone(phone)
@@ -43,7 +52,6 @@ class Contact():
     def add_birthday(self, birthday):
         self.birthday = Birthday(birthday)
 
-    @property
     def days_to_birthday(self):
         if self.birthday.value:
             today = datetime.today()
@@ -212,7 +220,40 @@ class Tags(Field):
         tags = self.value.lower().split(';')
         self.value = [tag.strip() for tag in tags if tag.strip()]
 
-class Menu:
+class Menu(ABC):
+    def __init__(self, address_book, notebook):
+        self.address_book = address_book
+        self.notebook = notebook
+
+    @abstractmethod
+    def display_menu(self):
+        pass
+
+    @abstractmethod
+    def run(self):
+        pass
+
+    @abstractmethod
+    def add_contact(self):
+        pass
+
+    @abstractmethod
+    def add_note(self):
+        pass
+
+    @abstractmethod
+    def display_notes(self):
+        pass
+
+    @abstractmethod
+    def add_phone_to_contact(self):
+        pass
+
+    @abstractmethod
+    def add_birthday_to_contact(self):
+        pass
+
+class ConsoleMenu(Menu):
     def __init__(self, address_book, notebook):
         self.address_book = address_book
         self.notebook = notebook
@@ -222,7 +263,9 @@ class Menu:
         print("1. Dodaj kontakt")
         print("2. Dodaj notatkę")
         print("3. Wyświetl notatki")
-        print("4. Wyjście")
+        print("4. Dodaj numer telefonu do kontaktu")
+        print("5. Dodaj urodziny do kontaktu")
+        print("6. Wyjście")
 
     def run(self):
         while True:
@@ -236,6 +279,10 @@ class Menu:
             elif choice == "3":
                 self.display_notes()
             elif choice == "4":
+                self.add_phone_to_contact()
+            elif choice == "5":
+                self.add_birthday_to_contact()
+            elif choice == "6":
                 print("Do widzenia!")
                 break
             else:
@@ -243,7 +290,11 @@ class Menu:
 
     def add_contact(self):
         name = input("Podaj imię kontaktu: ")
-        self.address_book.add_contact(name)
+        phone = input("Podaj numer telefonu kontaktu: ")
+        address = input("Podaj adres kontaktu: ")
+        email = input("Podaj adres email kontaktu: ")
+        birthday = input("Podaj urodziny kontaktu (w formacie YYYY-MM-DD): ")
+        self.address_book.add_contact(name, phone, address, email, birthday)
         print(f"Kontakt '{name}' został dodany.")
 
     def add_note(self):
@@ -256,9 +307,26 @@ class Menu:
         print("===== WSZYSTKIE NOTATKI =====")
         print(self.notebook.show_notes())
 
+    def add_phone_to_contact(self):
+        name = input("Podaj imię kontaktu, do którego chcesz dodać numer telefonu: ")
+        phone = input("Podaj numer telefonu: ")
+        if name in self.address_book.contacts:
+            self.address_book.contacts[name].add_phone(phone)
+            print(f"Numer telefonu '{phone}' został dodany do kontaktu '{name}'.")
+        else:
+            print(f"Kontakt o nazwie '{name}' nie istnieje.")
+
+    def add_birthday_to_contact(self):
+        name = input("Podaj imię kontaktu, do którego chcesz dodać urodziny: ")
+        birthday = input("Podaj urodziny kontaktu (w formacie YYYY-MM-DD): ")
+        if name in self.address_book.contacts:
+            self.address_book.contacts[name].add_birthday(birthday)
+            print(f"Urodziny '{birthday}' zostały dodane do kontaktu '{name}'.")
+        else:
+            print(f"Kontakt o nazwie '{name}' nie istnieje.")
+
 if __name__ == "__main__":
     address_book = AddressBook()
     notebook = Notebook()
-    menu = Menu(address_book, notebook)
-    menu.run()
-
+    console_menu = ConsoleMenu(address_book, notebook)
+    console_menu.run()
